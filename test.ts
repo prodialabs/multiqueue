@@ -119,12 +119,34 @@ await redis.flushall();
 		"popAny() must return correct job",
 	);
 
+	assertEquals(
+		await mq.popAny(),
+		undefined,
+		"popAny() must return nothing",
+	);
+
+	await new Promise((r) => setTimeout(r, 600));
+
+	assertEquals(
+		await mq.popAny(),
+		secondJob,
+		"popAny() must return the retryed job",
+	);
+
+	await new Promise((r) => setTimeout(r, 600));
+
+	assertEquals(
+		await mq.popAny(),
+		secondJob,
+		"popAny() must return the retryed job",
+	);
+
 	await mq.complete(myQueue2, secondJob);
 
 	assertEquals(
 		await mq.popAny(),
 		undefined,
-		"popAny() must return undefined when no jobs",
+		"popAny() must return nothing",
 	);
 })();
 

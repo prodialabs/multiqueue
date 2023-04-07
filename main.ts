@@ -132,6 +132,7 @@ export const createMultiQueue: CreateMultiQueue = <Queue, Job>(
 				local oldestJob = nil
 				local oldestQueue = nil
 
+				-- find oldest in-progress job
 				for k,queue in pairs(queues) do
 					local jobResponse = redis.call('zrange', retryKeyPrefix .. queue, '0', '0', 'WITHSCORES')
 
@@ -144,6 +145,7 @@ export const createMultiQueue: CreateMultiQueue = <Queue, Job>(
 					end
 				end
 
+				-- if older than timeout, return this job and set current time
 				if oldestTime < tonumber(timeout) then
 					redis.call('zadd', retryKeyPrefix .. oldestQueue, now, oldestJob)
 
