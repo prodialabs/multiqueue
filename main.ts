@@ -4,21 +4,25 @@ export const createMultiQueue: CreateMultiQueue = <Queue, Job>(
 	{ redis, prefix, retryAfter }: CreateMultiQueueOptions,
 ) => {
 	const queueDepthKey = `${prefix}depth`;
+	const tempKey = `${prefix}temp`;
+
+	const queueKeyPrefix = `${prefix}queue:`;
+	const retryKeyPrefix = `${prefix}retry:`;
 
 	const queueKey = (queue: Queue) =>
-		`${prefix}queue:${JSON.stringify(queue)}`;
+		`${queueKeyPrefix}${JSON.stringify(queue)}`;
 
 	const retryKey = (queue: Queue) =>
-		`${prefix}retry:${JSON.stringify(queue)}`;
+		`${retryKeyPrefix}${JSON.stringify(queue)}`;
 
 	const push = async (queue: Queue, job: Job, priority: number) => {
 		await redis.eval(
 			`
 				-- increment queue depth
-                redis.call('zincrby', KEYS[1], 1, ARGV[1])
-
+				redis.call('zincrby', KEYS[1], 1, ARGV[1])
+				
 				-- push to queue
-                redis.call('zadd', KEYS[2], ARGV[2], ARGV[3])
+				redis.call('zadd', KEYS[2], ARGV[2], ARGV[3])
             `,
 			[
 				queueDepthKey,
@@ -111,9 +115,76 @@ export const createMultiQueue: CreateMultiQueue = <Queue, Job>(
 	};
 
 	const popAny = async () => {
-		const queue = await getDeepest();
+		const job = await redis.eval(
+			`
+				-- global variables
+				local queueDepthKey = KEYS[1]
+				local tempKey = KEYS[2]
+				local queueKeyPrefix = ARGV[1]
+				local retryKeyPrefix = ARGV[2]
+				local now = ARGV[3]
+				local timeout = ARGV[4]
 
-		return queue === undefined ? undefined : pop(queue);
+				-- get list of queues
+				local queues = redis.call('zrange', KEYS[1], '0', '+inf', 'BYSCORE')
+
+				local oldestTime = tonumber(now)
+				local oldestJob = nil
+				local oldestQueue = nil
+
+				for k,queue in pairs(queues) do
+					local jobResponse = redis.call('zrange', retryKeyPrefix .. queue, '0', '0', 'WITHSCORES')
+
+					if jobResponse[1] ~= nil then
+						if tonumber(jobResponse[2]) < oldestTime then
+							oldestTime = tonumber(jobResponse[2])
+							oldestJob = jobResponse[1]
+							oldestQueue = queue
+						end
+					end
+				end
+
+				if oldestTime < tonumber(timeout) then
+					redis.call('zadd', retryKeyPrefix .. oldestQueue, now, oldestJob)
+
+					return oldestJob
+				end
+
+				oldestTime = tonumber(now)
+				oldestJob = nil
+				oldestQueue = nil
+
+				for k,queue in pairs(queues) do
+					local jobResponse = redis.call('zrange', queueKeyPrefix .. queue, '0', '0', 'WITHSCORES')
+
+					if jobResponse[1] ~= nil then
+						if tonumber(jobResponse[2]) < oldestTime then
+							oldestTime = tonumber(jobResponse[2])
+							oldestJob = jobResponse[1]
+							oldestQueue = queue
+						end
+					end
+				end
+
+				if oldestJob ~= nil then
+					redis.call('zrem', queueKeyPrefix .. oldestQueue, oldestJob)
+					redis.call('zadd', retryKeyPrefix .. oldestQueue, now, oldestJob)
+					return oldestJob
+				end
+            `,
+			[
+				queueDepthKey,
+				tempKey,
+			],
+			[
+				queueKeyPrefix,
+				retryKeyPrefix,
+				Date.now(),
+				Date.now() - retryAfter,
+			],
+		);
+
+		return typeof job === "string" ? JSON.parse(job) as Job : undefined;
 	};
 
 	return {

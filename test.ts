@@ -51,6 +51,84 @@ await redis.flushall();
 })();
 
 (async () => {
+	console.log("Testing popAny functionality...");
+
+	const myQueue1 = "queue1";
+	const myQueue2 = "queue2";
+	type Queue = typeof myQueue1 | typeof myQueue2;
+
+	type Job = {
+		id: string;
+		numbers: number[];
+	};
+
+	const mq = createMultiQueue<Queue, Job>({
+		redis,
+		prefix: "multiqueue-popany:",
+		retryAfter: 500,
+	});
+
+	assertEquals(
+		await mq.popAny(),
+		undefined,
+		"popAny() must return undefined when no jobs",
+	);
+
+	const firstJob: Job = {
+		id: "unique-id-here",
+		numbers: [Math.random()],
+	};
+
+	const secondJob: Job = {
+		id: "unique-id-here-2",
+		numbers: [Math.random()],
+	};
+
+	await mq.push(myQueue2, secondJob, 500);
+	await mq.push(myQueue1, firstJob, 250);
+
+	assertEquals(
+		await mq.popAny(),
+		firstJob,
+		"popAny() must return the first job",
+	);
+
+	await new Promise((r) => setTimeout(r, 600));
+
+	// job should be same as the first as timeout expired
+	assertEquals(
+		await mq.popAny(),
+		firstJob,
+		"popAny() must return after timeout",
+	);
+
+	assertEquals(
+		await mq.popAny(),
+		secondJob,
+		"popAny() must return second job",
+	);
+
+	await new Promise((r) => setTimeout(r, 600));
+
+	await mq.complete(myQueue1, firstJob);
+
+	// job should be same as the second
+	assertEquals(
+		await mq.popAny(),
+		secondJob,
+		"popAny() must return correct job",
+	);
+
+	await mq.complete(myQueue2, secondJob);
+
+	assertEquals(
+		await mq.popAny(),
+		undefined,
+		"popAny() must return undefined when no jobs",
+	);
+})();
+
+(async () => {
 	console.log("Testing retry functionality...");
 
 	const myQueue = "images-to-be-processed";
