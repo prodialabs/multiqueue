@@ -13,7 +13,7 @@ export type MultiQueue<Queue extends JsonValue, Job extends JsonValue> = {
 	pop: (queue: Queue) => Promise<Job | undefined>;
 	complete: (queue: Queue, job: Job) => Promise<void>;
 	getDeepest: () => Promise<Queue | undefined>;
-	popAny: () => Promise<Job | undefined>;
+	popAny: (queues?: Queue[]) => Promise<Job | undefined>;
 };
 
 export type CreateMultiQueueOptions = {

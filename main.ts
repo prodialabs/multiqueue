@@ -114,9 +114,22 @@ export const createMultiQueue: CreateMultiQueue = <Queue, Job>(
 			: undefined;
 	};
 
-	const popAny = async () => {
+	const popAny = async (queues?: Queue[]) => {
+		const areQueuesSpecified = !!queues;
+
 		const job = await redis.eval(
 			`
+				-- utility functions
+				local function sliceAfter(t, n)
+					local newTable = {}
+				
+					for i = n, #t do
+						table.insert(newTable, t[i])
+					end
+				
+					return newTable
+				end
+
 				-- global variables
 				local queueDepthKey = KEYS[1]
 				local tempKey = KEYS[2]
@@ -124,9 +137,16 @@ export const createMultiQueue: CreateMultiQueue = <Queue, Job>(
 				local retryKeyPrefix = ARGV[2]
 				local now = ARGV[3]
 				local timeout = ARGV[4]
+				local areQueuesSpecified = ARGV[5]
+
+				local queues = {}
 
 				-- get list of queues
-				local queues = redis.call('zrange', KEYS[1], '0', '+inf', 'BYSCORE')
+				if tonumber(areQueuesSpecified) == 1 then
+					queues = sliceAfter(KEYS, 3) -- Assign the value without redeclaring
+				else
+					queues = redis.call('zrange', KEYS[1], '0', '+inf', 'BYSCORE')
+				end
 
 				local oldestTime = tonumber(now)
 				local oldestJob = nil
@@ -177,12 +197,16 @@ export const createMultiQueue: CreateMultiQueue = <Queue, Job>(
 			[
 				queueDepthKey,
 				tempKey,
+				...(
+					queues || []
+				).map((v) => JSON.stringify(v)),
 			],
 			[
 				queueKeyPrefix,
 				retryKeyPrefix,
 				Date.now(),
 				Date.now() - retryAfter,
+				areQueuesSpecified ? 1 : 0,
 			],
 		);
 
