@@ -1,6 +1,6 @@
-# multiqueue
+![multiqueue logo](logo.png)
 
-Atomic first-in-first-out Redis queue for Deno.
+Flexible, high-preformance job queue built at [Prodia](https://prodia.com/).
 
 ## features
 
@@ -9,7 +9,7 @@ Atomic first-in-first-out Redis queue for Deno.
 - Auto-retry functionality with timeout
 - Automatic test suite
 
-## usage
+## example usage
 
 The following code imagines you have two queue pipelines: one for resizing images and one for resizing videos.
 
