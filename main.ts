@@ -213,11 +213,51 @@ export const createMultiQueue: CreateMultiQueue = <Queue, Job>(
 		return typeof job === "string" ? JSON.parse(job) as Job : undefined;
 	};
 
+	const getQueueDepths = async () => {
+		const queues = await redis.zrangebyscore(
+			queueDepthKey,
+			"0",
+			"+inf",
+		);
+
+		const depths = new Map<Queue, number>();
+
+		for (const queue of queues) {
+			depths.set(
+				JSON.parse(queue) as Queue,
+				await redis.zcard(`${queueKeyPrefix}${queue}`),
+			);
+		}
+
+		return depths;
+	};
+
+	const getRetryDepths = async () => {
+		const queues = await redis.zrangebyscore(
+			queueDepthKey,
+			"0",
+			"+inf",
+		);
+
+		const depths = new Map<Queue, number>();
+
+		for (const queue of queues) {
+			depths.set(
+				JSON.parse(queue) as Queue,
+				await redis.zcard(`${retryKeyPrefix}${queue}`),
+			);
+		}
+
+		return depths;
+	};
+
 	return {
 		push,
 		pop,
 		complete,
 		getDeepest,
 		popAny,
+		getQueueDepths,
+		getRetryDepths,
 	};
 };

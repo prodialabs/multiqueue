@@ -1,5 +1,5 @@
 {
-  "version": "2",
+  "version": "3",
   "remote": {
     "https://deno.land/std@0.168.0/_util/asserts.ts": "d0844e9b62510f89ce1f9878b046f6a57bf88f208a10304aab50efcb48365272",
     "https://deno.land/std@0.168.0/async/deferred.ts": "77d3f84255c3627f1cc88699d8472b664d7635990d5358c4351623e098e917d6",
@@ -12,6 +12,10 @@
     "https://deno.land/std@0.181.0/testing/_diff.ts": "1a3c044aedf77647d6cac86b798c6417603361b66b54c53331b312caeb447aea",
     "https://deno.land/std@0.181.0/testing/_format.ts": "a69126e8a469009adf4cf2a50af889aca364c349797e63174884a52ff75cf4c7",
     "https://deno.land/std@0.181.0/testing/asserts.ts": "e16d98b4d73ffc4ed498d717307a12500ae4f2cbe668f1a215632d19fcffc22f",
+    "https://deno.land/std@0.207.0/assert/assert.ts": "9a97dad6d98c238938e7540736b826440ad8c1c1e54430ca4c4e623e585607ee",
+    "https://deno.land/std@0.207.0/assert/assertion_error.ts": "4d0bde9b374dfbcbe8ac23f54f567b77024fb67dbb1906a852d67fe050d42f56",
+    "https://deno.land/std@0.207.0/cli/parse_args.ts": "9bea02050b3f302e706871ff87ecfa3ad82cc34249adbe0dcddfaac75bdb48ff",
+    "https://deno.land/std@0.207.0/flags/mod.ts": "567a34800a33e701942cb1726dd7e627a76e4681c33ce7346ac85cf90f691a8e",
     "https://deno.land/x/redis@v0.29.0/backoff.ts": "33e4a6e245f8743fbae0ce583993a671a3ac2ecee433a3e7f0bd77b5dd541d84",
     "https://deno.land/x/redis@v0.29.0/command.ts": "9d1a679821c9065298fc2b8831b6532605426259b17a1f9d41ee9219180244c7",
     "https://deno.land/x/redis@v0.29.0/connection.ts": "335f0aa728b8e0b90353c4015daf5abaa7cae657739eb66cb48324f2d197dcc0",
