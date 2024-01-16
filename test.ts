@@ -38,15 +38,65 @@ await (async () => {
 	await mq.push(myQueue, firstJob, 250);
 
 	assertEquals(
+		await mq.getQueueDepths(),
+		new Map([
+			[myQueue, 2],
+		]),
+		"getQueueDepths() must return correct queue sizes",
+	);
+
+	assertEquals(
+		await mq.getRetryDepths(),
+		new Map([
+			[myQueue, 0],
+		]),
+		"getRetryDepths() must return correct queue sizes",
+	);
+
+	// pop one element
+	assertEquals(
 		await mq.pop(myQueue),
 		firstJob,
 		"pop() must return correct job",
 	);
 
 	assertEquals(
+		await mq.getQueueDepths(),
+		new Map([
+			[myQueue, 1],
+		]),
+		"getQueueDepths() must return correct queue sizes",
+	);
+
+	assertEquals(
+		await mq.getRetryDepths(),
+		new Map([
+			[myQueue, 1],
+		]),
+		"getRetryDepths() must return correct queue sizes",
+	);
+
+	// pop another element
+	assertEquals(
 		await mq.pop(myQueue),
 		secondJob,
 		"pop() must return correct job",
+	);
+
+	assertEquals(
+		await mq.getQueueDepths(),
+		new Map([
+			[myQueue, 0],
+		]),
+		"getQueueDepths() must return correct queue sizes",
+	);
+
+	assertEquals(
+		await mq.getRetryDepths(),
+		new Map([
+			[myQueue, 2],
+		]),
+		"getRetryDepths() must return correct queue sizes",
 	);
 })();
 
